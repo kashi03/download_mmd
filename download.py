@@ -1,4 +1,5 @@
 import requests, json
+from tqdm import tqdm
 from bs4 import BeautifulSoup
 
 cookie = ''
@@ -16,9 +17,11 @@ authenticity_token = html.find('meta', attrs={'name':'csrf-token'})['content']
 url = 'https://3d.nicovideo.jp/downloads/6098/session'
 params = {'authenticity_token':authenticity_token}
 r = session.post(url, stream=True, params=params)
-with open('a', 'wb') as f:
+progress_bar = tqdm(total=int(r.headers['Content-Length']), unit_scale=True)
+with open('mmd/a.zip', 'wb') as f:
     for chunk in r.iter_content(chunk_size=1024):
         if chunk:
-            print(1,end='')
             f.write(chunk)
-            f.flush
+            f.flush()
+            progress_bar.update(len(chunk))
+    progress_bar.close()
