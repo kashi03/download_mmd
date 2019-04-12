@@ -10,24 +10,24 @@ class DownloadMMD:
         self.base_url = 'https://3d.nicovideo.jp/'
         self.mmd_list = []
 
-    def search_mmd(self, value=28):
-        mmd_search_url = 'https://3d.nicovideo.jp/search?word=%E8%89%A6%E3%81%93%E3%82%8C&page=1&limit=28&word_type=tag&category=all&work_type=mmd&download_filter=all&sort=total&order=1&perfect_match=0&usable_animation='
-        html = self.session.get(mmd_search_url)
-        html = BeautifulSoup(html.text, 'lxml')
-        mmd_links = [urljoin(self.base_url, i['href']) for i in html.find_all('a', class_='work-box-link')]
-        
-        prb = tqdm(total=len(mmd_links), unit_scale=True)
-        for link in mmd_links:
-            html = self.session.get(link)
+    def search_mmd(self, word='', pages=1, start_page=1 ,value=28):
+        for page in range(start_page, pages+1):
+            mmd_search_url = f'https://3d.nicovideo.jp/search?word={word}&page={page}&limit=28&word_type=tag&category=all&work_type=mmd&download_filter=all&sort=total&order=1&perfect_match=0&usable_animation='
+            html = self.session.get(mmd_search_url)
             html = BeautifulSoup(html.text, 'lxml')
-            mmd_info = {}
-            mmd_info['file_name'] = html.find('dl', class_='horizontal').find('dd').text
-            mmd_info['url'] = urljoin(self.base_url, html.find('a', id='js-download')['href'])
-            mmd_info['authenticity_token'] = html.find('meta', attrs={'name':'csrf-token'})['content']
-            self.mmd_list.append(mmd_info)
-            prb.update(1)
-            time.sleep(0.3)
-        prb.close()
+            mmd_links = [urljoin(self.base_url, i['href']) for i in html.find_all('a', class_='work-box-link')]
+            
+            prb = tqdm(total=len(mmd_links), unit_scale=True)
+            for link in mmd_links:
+                html = self.session.get(link)
+                html = BeautifulSoup(html.text, 'lxml')
+                mmd_info = {}
+                mmd_info['file_name'] = html.find('dl', class_='horizontal').find('dd').text
+                mmd_info['url'] = urljoin(self.base_url, html.find('a', id='js-download')['href'])
+                mmd_info['authenticity_token'] = html.find('meta', attrs={'name':'csrf-token'})['content']
+                self.mmd_list.append(mmd_info)
+                prb.update(1)
+            prb.close()
 
     def download(self):
         for info in self.mmd_list:
@@ -76,5 +76,5 @@ if __name__ == "__main__":
         j = json.load(f)
         cookie = j['cookie']
     mmd = DownloadMMD(cookie)
-    mmd.search_mmd()
+    mmd.search_mmd(word='艦これ',start_page=4, pages=3)
     mmd.download()
